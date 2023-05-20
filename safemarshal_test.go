@@ -27,6 +27,11 @@ type unsafeStruct2 struct {
 	Field2 func()
 }
 
+type unsafeStruct3 struct {
+	Field1 string
+	Field2 chan int
+}
+
 type unsafeSelfStruct struct {
 	Field1 string
 	Field2 *unsafeSelfStruct
@@ -63,6 +68,10 @@ func TestCheck(t *testing.T) {
 		unsafeStructVal2 = unsafeStruct2{
 			Field1: "a string",
 			Field2: func() {},
+		}
+		unsafeStructVal3 = unsafeStruct3{
+			Field1: "a string",
+			Field2: make(chan int),
 		}
 
 		complexVal = complex(10, 10)
@@ -131,6 +140,11 @@ func TestCheck(t *testing.T) {
 		{
 			name:         "unsafe struct 2",
 			subject:      unsafeStructVal2,
+			expectChecks: false,
+		},
+		{
+			name:         "unsafe struct 3",
+			subject:      unsafeStructVal3,
 			expectChecks: false,
 		},
 		{

@@ -10,14 +10,16 @@ func Check(v any) bool {
 }
 
 func unsafe(t reflect.Type, visited []reflect.Type) bool {
-	for _, vtype := range visited {
-		if t == vtype {
+	for i := range visited {
+		if t == visited[i] {
 			return false
 		}
 	}
+
 	copied := make([]reflect.Type, len(visited)+1)
 	copy(copied, visited)
 	copied[len(visited)] = t
+
 	switch t.Kind() {
 	case reflect.String:
 		fallthrough
