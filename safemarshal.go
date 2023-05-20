@@ -4,12 +4,16 @@ import (
 	"reflect"
 )
 
-// Check returns true if the type of v can be safely JSON marshalled.
-func Check(v any) bool {
-	return !unsafe(reflect.TypeOf(v), nil)
+// OK returns true if the type of v can be safely JSON marshalled.
+func OK(v any) bool {
+	return !nok(reflect.TypeOf(v), nil)
 }
 
-func unsafe(t reflect.Type, visited []reflect.Type) bool {
+func nok(t reflect.Type, visited []reflect.Type) bool {
+	if t == nil {
+		return false
+	}
+
 	for i := range visited {
 		if t == visited[i] {
 			return false
@@ -31,18 +35,18 @@ func unsafe(t reflect.Type, visited []reflect.Type) bool {
 		fallthrough
 	case reflect.Float32, reflect.Float64:
 		return false
-	case reflect.Array, reflect.Slice:
-		fallthrough
-	case reflect.Pointer:
-		return unsafe(t.Elem(), copied)
+
+	case reflect.Array, reflect.Slice, reflect.Pointer:
+		return nok(t.Elem(), copied)
+
 	case reflect.Map:
-		if unsafe(t.Key(), copied) {
+		if nok(t.Key(), copied) {
 			return true
 		}
-		return unsafe(t.Elem(), copied)
+		return nok(t.Elem(), copied)
 	case reflect.Struct:
 		for i := 0; i < t.NumField(); i++ {
-			if unsafe(t.Field(i).Type, copied) {
+			if nok(t.Field(i).Type, copied) {
 				return true
 			}
 		}
