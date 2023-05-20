@@ -65,13 +65,14 @@ type testcase struct {
 	expectsOK bool
 }
 
-func TestCheck(t *testing.T) {
+func TestOK(t *testing.T) {
 	var (
 		strVal        = "a string"
 		intVal        = 999
 		uintVal       = 999
 		floatVal      = 999.99
 		bytesVal      = []byte("bytes")
+		charVal       = 'x'
 		safeStructVal = safeStruct{
 			Field1: "a string",
 		}
@@ -150,6 +151,16 @@ func TestCheck(t *testing.T) {
 			expectsOK: true,
 		},
 		{
+			name:      "char",
+			subject:   charVal,
+			expectsOK: true,
+		},
+		{
+			name:      "char pointer",
+			subject:   &charVal,
+			expectsOK: true,
+		},
+		{
 			name:      "bytes",
 			subject:   bytesVal,
 			expectsOK: true,
@@ -183,6 +194,24 @@ func TestCheck(t *testing.T) {
 			name:      "float pointer",
 			subject:   &floatVal,
 			expectsOK: true,
+		},
+		{
+			name: "anonymous safe struct",
+			subject: struct {
+				Field string
+			}{
+				Field: "string",
+			},
+			expectsOK: true,
+		},
+		{
+			name: "anonymous unsafe struct",
+			subject: struct {
+				Field any
+			}{
+				Field: "string",
+			},
+			expectsOK: false,
 		},
 		{
 			name:      "safe struct",
@@ -275,8 +304,9 @@ func TestCheck(t *testing.T) {
 			expectsOK: false,
 		},
 	}
-	for i := range testcases {
-		test := testcases[i]
+
+	for _, tc := range testcases {
+		test := tc
 		t.Run(
 			test.name, func(t *testing.T) {
 				t.Parallel()

@@ -1,7 +1,3 @@
-# safemarshal
-Go function to determine if a type can be JSON marshalled safely
-
-```go
 package main
 
 import (
@@ -31,7 +27,7 @@ func main() {
 	// This will print 'false'.
 	fmt.Println(ok)
 
-	// Note that OK returning false does *not* necessarily indicate that JSON marshalling will always fail.
+	// Note that OK returning false does *not* necessarily indicate that JSON marshalling will fail.
 	// That may depend on runtime values.
 
 	if _, err := json.Marshal(Unsafe{Field: "safe"}); err != nil {
@@ -44,5 +40,3 @@ func main() {
 		fmt.Println(err)
 	}
 }
-
-```
