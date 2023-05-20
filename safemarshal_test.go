@@ -69,6 +69,7 @@ func TestCheck(t *testing.T) {
 	var (
 		strVal        = "a string"
 		intVal        = 999
+		uintVal       = 999
 		floatVal      = 999.99
 		bytesVal      = []byte("bytes")
 		safeStructVal = safeStruct{
@@ -164,6 +165,16 @@ func TestCheck(t *testing.T) {
 			expectsOK: true,
 		},
 		{
+			name:      "uint",
+			subject:   uintVal,
+			expectsOK: true,
+		},
+		{
+			name:      "uint pointer",
+			subject:   &uintVal,
+			expectsOK: true,
+		},
+		{
 			name:      "float",
 			subject:   floatVal,
 			expectsOK: true,
@@ -256,6 +267,11 @@ func TestCheck(t *testing.T) {
 		{
 			name:      "complex number",
 			subject:   complexVal,
+			expectsOK: false,
+		},
+		{
+			name:      "unsafe map key",
+			subject:   map[complex128]safeStruct{complexVal: safeStructVal},
 			expectsOK: false,
 		},
 	}
