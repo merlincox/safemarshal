@@ -275,7 +275,8 @@ func TestCheck(t *testing.T) {
 			expectsOK: false,
 		},
 	}
-	for _, test := range testcases {
+	for i := range testcases {
+		test := testcases[i]
 		t.Run(
 			test.name, func(t *testing.T) {
 				t.Parallel()
