@@ -4,66 +4,43 @@ import (
 	"reflect"
 )
 
+// Check returns true if the type of v can be safely JSON marshalled.
 func Check(v any) bool {
-	return !unsafe(reflect.TypeOf(v))
+	return !unsafe(reflect.TypeOf(v), nil)
 }
 
-// Methods applicable only to some types, depending on Kind.
-// The methods allowed for each kind are:
-//
-//	Int*, Uint*, Float*, Complex*: Bits
-//	Array: Elem, Len
-//	Chan: ChanDir, Elem
-//	Func: In, NumIn, Out, NumOut, IsVariadic.
-//	Map: Key, Elem
-//	Pointer: Elem
-//	Slice: Elem
-//	Struct: Field, FieldByIndex, FieldByName, FieldByNameFunc, NumField
-
-func unsafe(t reflect.Type) bool {
+func unsafe(t reflect.Type, visited []reflect.Type) bool {
+	for _, vtype := range visited {
+		if t == vtype {
+			return false
+		}
+	}
+	copied := make([]reflect.Type, len(visited)+1)
+	copy(copied, visited)
+	copied[len(visited)] = t
 	switch t.Kind() {
 	case reflect.String:
 		fallthrough
 	case reflect.Bool:
 		fallthrough
-	case reflect.Int:
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		fallthrough
-	case reflect.Int8:
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		fallthrough
-	case reflect.Int16:
-		fallthrough
-	case reflect.Int32:
-		fallthrough
-	case reflect.Int64:
-		fallthrough
-	case reflect.Uint:
-		fallthrough
-	case reflect.Uint8:
-		fallthrough
-	case reflect.Uint16:
-		fallthrough
-	case reflect.Uint32:
-		fallthrough
-	case reflect.Uint64:
-		fallthrough
-	case reflect.Float32:
-		fallthrough
-	case reflect.Float64:
+	case reflect.Float32, reflect.Float64:
 		return false
-	case reflect.Array:
-		fallthrough
-	case reflect.Slice:
+	case reflect.Array, reflect.Slice:
 		fallthrough
 	case reflect.Pointer:
-		return unsafe(t.Elem())
+		return unsafe(t.Elem(), copied)
 	case reflect.Map:
-		if unsafe(t.Key()) {
+		if unsafe(t.Key(), copied) {
 			return true
 		}
-		return unsafe(t.Elem())
+		return unsafe(t.Elem(), copied)
 	case reflect.Struct:
 		for i := 0; i < t.NumField(); i++ {
-			if unsafe(t.Field(i).Type) {
+			if unsafe(t.Field(i).Type, copied) {
 				return true
 			}
 		}

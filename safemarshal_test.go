@@ -8,83 +8,152 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type simple struct {
+type safeStruct struct {
 	Field1 string
 }
 
-type complicated struct {
+type selfStruct struct {
+	Field1 string
+	Field2 *selfStruct
+}
+
+type unsafeStruct1 struct {
 	Field1 string
 	Field2 any
 }
 
-func TestString(t *testing.T) {
-	v := "a string"
-	testType(t, v, true)
+type unsafeStruct2 struct {
+	Field1 string
+	Field2 func()
 }
 
-func TestStringPtr(t *testing.T) {
-	v := "a string"
-	testType(t, &v, true)
+type unsafeSelfStruct struct {
+	Field1 string
+	Field2 *unsafeSelfStruct
+	Field3 any
 }
 
-func TestInt(t *testing.T) {
-	v := 9
-	testType(t, v, true)
+type testcase struct {
+	name         string
+	subject      any
+	expectChecks bool
 }
 
-func TestIntPtr(t *testing.T) {
-	v := "a string"
-	testType(t, &v, true)
-}
+func TestCheck(t *testing.T) {
+	var (
+		strVal        = "a string"
+		intVal        = 999
+		bytesVal      = []byte("bytes")
+		safeStructVal = safeStruct{
+			Field1: "a string",
+		}
+		selfStructVal = selfStruct{
+			Field1: "a string",
+			Field2: &selfStruct{Field1: "another string"},
+		}
+		unsafeSelfStructVal = unsafeSelfStruct{
+			Field1: "a string",
+			Field2: &unsafeSelfStruct{Field1: "another string"},
+			Field3: 99.9,
+		}
+		unsafeStructVal1 = unsafeStruct1{
+			Field1: "a string",
+			Field2: 999,
+		}
+		unsafeStructVal2 = unsafeStruct2{
+			Field1: "a string",
+			Field2: func() {},
+		}
 
-func TestSimple(t *testing.T) {
-	v := simple{
-		Field1: "field1",
+		complexVal = complex(10, 10)
+	)
+	testcases := []testcase{
+		{
+			name:         "string",
+			subject:      strVal,
+			expectChecks: true,
+		},
+		{
+			name:         "string pointer",
+			subject:      &strVal,
+			expectChecks: true,
+		},
+		{
+			name:         "bytes",
+			subject:      bytesVal,
+			expectChecks: true,
+		},
+		{
+			name:         "int",
+			subject:      intVal,
+			expectChecks: true,
+		},
+		{
+			name:         "int pointer",
+			subject:      &intVal,
+			expectChecks: true,
+		},
+		{
+			name:         "safe struct",
+			subject:      safeStructVal,
+			expectChecks: true,
+		},
+		{
+			name:         "safe struct pointer",
+			subject:      &safeStructVal,
+			expectChecks: true,
+		},
+		{
+			name:         "safe struct slice",
+			subject:      []safeStruct{safeStructVal},
+			expectChecks: true,
+		},
+		{
+			name:         "safe struct map",
+			subject:      map[string]safeStruct{"key": safeStructVal},
+			expectChecks: true,
+		},
+		{
+			name:         "self struct",
+			subject:      selfStructVal,
+			expectChecks: true,
+		},
+		{
+			name:         "unsafe self struct",
+			subject:      unsafeSelfStructVal,
+			expectChecks: false,
+		},
+		{
+			name:         "unsafe struct 1",
+			subject:      unsafeStructVal1,
+			expectChecks: false,
+		},
+		{
+			name:         "unsafe struct 2",
+			subject:      unsafeStructVal2,
+			expectChecks: false,
+		},
+		{
+			name:         "unsafe struct pointer",
+			subject:      &unsafeStructVal1,
+			expectChecks: false,
+		},
+		{
+			name:         "complex number",
+			subject:      complexVal,
+			expectChecks: false,
+		},
 	}
-	testType(t, v, true)
-}
-
-func TestComplicated(t *testing.T) {
-	v := complicated{
-		Field1: "field1",
-		Field2: 99,
-	}
-	testType(t, v, false)
-}
-
-func TestComplicatedSlice(t *testing.T) {
-	v1 := complicated{
-		Field1: "field1",
-		Field2: 99,
-	}
-	v := []complicated{v1}
-	testType(t, v, false)
-}
-
-func TestComplicatedMap(t *testing.T) {
-	v1 := complicated{
-		Field1: "field1",
-		Field2: 99,
-	}
-	v := map[string]complicated{
-		"key": v1,
-	}
-	testType(t, v, false)
-}
-
-func TestSimpleSlice(t *testing.T) {
-	v1 := simple{
-		Field1: "field1",
-	}
-	v := []simple{v1}
-	testType(t, v, true)
-}
-
-func testType(t *testing.T, v any, expectedSafe bool) {
-	checked := safemarshal.Check(v)
-	assert.Equal(t, expectedSafe, checked, "Check for %T should return %v", v, expectedSafe)
-	_, err := json.Marshal(v)
-	if expectedSafe {
-		assert.Nil(t, err)
+	for _, tc := range testcases {
+		t.Run(
+			tc.name, func(t *testing.T) {
+				checks := safemarshal.Check(tc.subject)
+				assert.Equal(t, tc.expectChecks, checks, "Check for %T should return %v", tc.subject, tc.expectChecks)
+				_, err := json.Marshal(tc.subject)
+				if tc.expectChecks {
+					assert.Nil(t, err, "Marshalling %T should not throw an error", tc.subject)
+				}
+			},
+		)
 	}
 }
